@@ -20,6 +20,10 @@ build_nmap() {
     git clean -fdx || true
     # make sure we only build the static libraries
     sed -i '/build-zlib: $(ZLIBDIR)\/Makefile/!b;n;c\\t@echo Compiling zlib; cd $(ZLIBDIR) && $(MAKE) static;' "${BUILD_DIRECTORY}/nmap/Makefile.in"
+
+    # FIX: liblinear 2.50 no longer provides "liblinear.a" target; use "static-lib"
+    sed -i 's/&& $(MAKE) liblinear\.a /&& $(MAKE) static-lib /' "${BUILD_DIRECTORY}/nmap/Makefile.in"
+    
     CC='gcc -static -fPIC' \
         CXX='g++ -static -static-libstdc++ -fPIC' \
         LD=ld \

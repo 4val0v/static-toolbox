@@ -17,12 +17,22 @@ init_lib $1
 build_nmap() {
     fetch "https://github.com/nmap/nmap.git" "${BUILD_DIRECTORY}/nmap" git
     cd "${BUILD_DIRECTORY}/nmap"
+
+    # Ensure clean tree before applying patches
     git clean -fdx || true
+    
     # make sure we only build the static libraries
     sed -i '/build-zlib: $(ZLIBDIR)\/Makefile/!b;n;c\\t@echo Compiling zlib; cd $(ZLIBDIR) && $(MAKE) static;' "${BUILD_DIRECTORY}/nmap/Makefile.in"
 
     # FIX: liblinear 2.50 no longer provides "liblinear.a" target; use "static-lib"
-    sed -i 's/&& $(MAKE) liblinear\.a /&& $(MAKE) static-lib /' "${BUILD_DIRECTORY}/nmap/Makefile.in"
+    sed -i 's/&& $(MAKE) liblinear\.a/&& $(MAKE) static-lib/g'  "${BUILD_DIRECTORY}/nmap/Makefile.in"
+    if [ -f "${BUILD_DIRECTORY}/nmap/liblinear/Makefile" ] && ! grep -qE '^[[:space:]]*liblinear\.a:' "${BUILD_DIRECTORY}/nmap/liblinear/Makefile"; then
+        cat >> "${BUILD_DIRECTORY}/nmap/liblinear/Makefile" <<'EOF'
+# Compatibility target for build systems expecting "make liblinear.a"
+liblinear.a:
+	$(MAKE) static-lib
+EOF
+    fi
     
     CC='gcc -static -fPIC' \
         CXX='g++ -static -static-libstdc++ -fPIC' \

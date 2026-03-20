@@ -293,7 +293,7 @@ lib_build_libpcap(){
     fetch "$GIT_LIBPCAP" "${BUILD_DIRECTORY}/libpcap" git
     cd "${BUILD_DIRECTORY}/libpcap" || { echo "Cannot cd to ${BUILD_DIRECTORY}/libpcap"; exit 1; }
     git clean -fdx
-    git checkout libpcap-1.9.1
+    git checkout libpcap-1.10
     CFLAGS="${GCC_OPTS}" \
         CXXFLAGS="${GXX_OPTS}" \
         ./configure \

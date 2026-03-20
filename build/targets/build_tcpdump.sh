@@ -14,15 +14,23 @@ set -x
 source $GITHUB_WORKSPACE/build/lib.sh
 init_lib "$1"
 
+TCPDUMP_VERSION="4.99.4"
+TCPDUMP_TARBALL_URL="https://www.tcpdump.org/release/tcpdump-${TCPDUMP_VERSION}.tar.gz"
+
 build_tcpdump() {
-    fetch "https://www.tcpdump.org/release/tcpdump-4.99.4.tar.gz" "${BUILD_DIRECTORY}/tcpdump" http
+    fetch "$TCPDUMP_TARBALL_URL" "${BUILD_DIRECTORY}/tcpdump" http
     cd "${BUILD_DIRECTORY}/tcpdump"
+
     export LIBPCAP_PATH="${BUILD_DIRECTORY}/libpcap"
-    CFLAGS="${GCC_OPTS} -I${LIBPCAP_PATH} -L${LIBPCAP_PATH}" \
-        CXXFLAGS="${GXX_OPTS}" \
-        CPPFLAGS="-static" \
-        LDFLAGS="-static" \
-        ./configure --host="$(get_host_triple)"
+
+    CFLAGS="${GCC_OPTS} -I${LIBPCAP_PATH}" \
+    CXXFLAGS="${GXX_OPTS}" \
+    CPPFLAGS="-I${LIBPCAP_PATH}" \
+    LDFLAGS="-L${LIBPCAP_PATH} -static" \
+    ./configure \
+        --host="$(get_host_triple)" \
+        --with-crypto=no
+
     make -j4
     strip tcpdump
 }
@@ -30,9 +38,11 @@ build_tcpdump() {
 main() {
     lib_build_libpcap
     build_tcpdump
+    
     local version
     version=$(get_version "${BUILD_DIRECTORY}/tcpdump/tcpdump --version 2>&1 | head -n1 | awk '{print \$3}'")
     version_number=$(echo "$version" | cut -d"-" -f2)
+    
     cp "${BUILD_DIRECTORY}/tcpdump/tcpdump" "${OUTPUT_DIRECTORY}/tcpdump${version}"
     echo "[+] Finished building tcpdump ${CURRENT_ARCH}"
 

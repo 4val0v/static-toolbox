@@ -14,7 +14,7 @@ set -x
 source $GITHUB_WORKSPACE/build/lib.sh
 init_lib "$1"
 
-TCPDUMP_VERSION="4.99.4"
+TCPDUMP_VERSION="4.99.6"
 TCPDUMP_TARBALL_URL="https://www.tcpdump.org/release/tcpdump-${TCPDUMP_VERSION}.tar.gz"
 
 build_tcpdump() {
@@ -40,6 +40,7 @@ main() {
     build_tcpdump
     
     local version
+    local version_number
     version=$(get_version "${BUILD_DIRECTORY}/tcpdump/tcpdump --version 2>&1 | head -n1 | awk '{print \$3}'")
     version_number=$(echo "$version" | cut -d"-" -f2)
     

@@ -15,17 +15,14 @@ source $GITHUB_WORKSPACE/build/lib.sh
 init_lib "$1"
 
 build_tcpdump() {
-    fetch "https://github.com/the-tcpdump-group/tcpdump.git" "${BUILD_DIRECTORY}/tcpdump" git
+    fetch "https://www.tcpdump.org/release/tcpdump-4.99.4.tar.gz" "${BUILD_DIRECTORY}/tcpdump" http
     cd "${BUILD_DIRECTORY}/tcpdump"
-    git clean -fdx
-    git checkout tcpdump-4.99
     export LIBPCAP_PATH="${BUILD_DIRECTORY}/libpcap"
     CFLAGS="${GCC_OPTS} -I${LIBPCAP_PATH} -L${LIBPCAP_PATH}" \
         CXXFLAGS="${GXX_OPTS}" \
         CPPFLAGS="-static" \
         LDFLAGS="-static" \
-        ./configure \
-            --host="$(get_host_triple)"
+        ./configure --host="$(get_host_triple)"
     make -j4
     strip tcpdump
 }

@@ -60,30 +60,35 @@ get_host_triple(){
 # Fetch and extract a resource via
 # HTTP or clone a Git repository.
 fetch(){
-    if [ "$#" -ne 3 ];then
+    if [ "$#" -ne 3 ]; then
         echo "fetch() requires a source, destination and method."
         echo "Example: fetch http://github.com/test.git /build/test git"
         exit 1
     fi
-    source=$1
-    shift
-    destination=$1
-    shift
-    method=$@
-    # TODO: check if $source is a valid URL
-    if [ -d "$destination" ] || [ -f "$destination" ];then
+
+    local source="$1"
+    local destination="$2"
+    local method="$3"
+
+    if [ -d "$destination" ] || [ -f "$destination" ]; then
         echo "Destination ${destination} already exists, skipping."
         return
     fi
-    if [ "${method,,}" == "http" ];then
-        cd /tmp || { echo "Could not cd to /tmp"; exit 1; }
-        headers=$(mktemp headers.XXXXXX)
-        curl -L -D "$headers" -sOJ "$source"
-        filename=$(cat "$headers" | grep -o -E 'filename=.*$' | sed -e 's/filename=//')
-        filename=$(trim "$filename")
-        extract "$filename" "$destination"
-        trap "rm -rf ${headers} /tmp/'${filename}'" EXIT TERM
-    elif [ "${method,,}" == "git" ];then
+
+    if [ "${method,,}" == "http" ]; then
+        local tmp_file
+        case "$source" in
+            *.tar.gz|*.tgz)   tmp_file=$(mktemp /tmp/fetch.XXXXXX.tar.gz) ;;
+            *.tar.xz)         tmp_file=$(mktemp /tmp/fetch.XXXXXX.tar.xz) ;;
+            *.tar.bz2|*.tbz2) tmp_file=$(mktemp /tmp/fetch.XXXXXX.tar.bz2) ;;
+            *.tar)            tmp_file=$(mktemp /tmp/fetch.XXXXXX.tar) ;;
+            *)                tmp_file=$(mktemp /tmp/fetch.XXXXXX) ;;
+        esac
+
+        curl -L --fail --retry 3 "$source" -o "$tmp_file"
+        extract "$tmp_file" "$destination"
+        rm -f "$tmp_file"
+    elif [ "${method,,}" == "git" ]; then
         git clone "$source" "$destination"
     else
         echo "Invalid method ${method}"
